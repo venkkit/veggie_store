@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VeggieStore — Login</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .otp-row {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin: 16px 0;
+        }
+
+        .otp-box {
+            width: 44px;
+            height: 52px;
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--bg);
+            color: var(--text-primary);
+            transition: border-color var(--transition);
+            outline: none;
+        }
+
+        .otp-box:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, .2);
+        }
+
+        .phone-wrap {
+            display: flex;
+            gap: 0;
+        }
+
+        .phone-prefix {
+            background: var(--green-50);
+            border: 1.5px solid var(--border);
+            border-right: none;
+            border-radius: var(--radius-md) 0 0 var(--radius-md);
+            padding: 0 12px;
+            display: flex;
+            align-items: center;
+            font-weight: 700;
+            color: var(--primary);
+            font-size: .95rem;
+        }
+
+        .phone-input {
+            border-radius: 0 var(--radius-md) var(--radius-md) 0 !important;
+        }
+
+        .demo-hint {
+            background: var(--green-50);
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
+            font-size: .78rem;
+            color: var(--green-900);
+            margin-top: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-page">
+        <div style="text-align:center;color:#fff;margin-bottom:28px;position:relative;z-index:1;">
+            <div style="font-size:3.5rem;animation:float 3s ease-in-out infinite;">🌿</div>
+            <h1 style="color:#fff;font-size:2rem;font-weight:800;letter-spacing:-.5px;margin-top:8px;">VeggieStore</h1>
+            <p style="color:rgba(255,255,255,.8);font-size:.9rem;margin-top:4px;">Fresh vegetables, delivered to your
+                door 🥦</p>
+        </div>
+
+        <!-- Phone Step -->
+        <div class="auth-card" id="step-phone">
+            <div style="text-align:center;margin-bottom:20px;">
+                <div style="font-size:2rem;">📱</div>
+                <h3 style="margin-top:8px;font-size:1.1rem;">Enter your phone number</h3>
+                <p style="font-size:.82rem;color:var(--text-muted);margin-top:4px;">We'll send you an OTP to verify</p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Phone Number</label>
+                <div class="phone-wrap">
+                    <div class="phone-prefix">+91</div>
+                    <input type="tel" class="form-input phone-input" id="phone-input" maxlength="10"
+                        placeholder="98765 43210" inputmode="numeric">
+                </div>
+            </div>
+
+            <div class="form-group mt-sm">
+                <label class="form-label">Your Name</label>
+                <input type="text" class="form-input" id="name-input" placeholder="e.g. Ramesh Kumar">
+            </div>
+
+            <button class="btn btn-primary btn-block mt-md" onclick="sendOTP()">Get OTP →</button>
+
+            <div class="demo-hint">
+                💡 <strong>Demo:</strong> Any 10-digit number · Name is optional (defaults to "Customer")
+            </div>
+        </div>
+
+        <!-- OTP Step -->
+        <div class="auth-card hidden" id="step-otp">
+            <div style="text-align:center;margin-bottom:20px;">
+                <div style="font-size:2rem;">🔢</div>
+                <h3 style="margin-top:8px;font-size:1.1rem;">Enter OTP</h3>
+                <p style="font-size:.82rem;color:var(--text-muted);margin-top:4px;" id="otp-subtitle">Sent to +91
+                    xxxxxxxxxx</p>
+            </div>
+
+            <div class="otp-row">
+                <input class="otp-box" id="otp-0" type="tel" maxlength="1" inputmode="numeric">
+                <input class="otp-box" id="otp-1" type="tel" maxlength="1" inputmode="numeric">
+                <input class="otp-box" id="otp-2" type="tel" maxlength="1" inputmode="numeric">
+                <input class="otp-box" id="otp-3" type="tel" maxlength="1" inputmode="numeric">
+                <input class="otp-box" id="otp-4" type="tel" maxlength="1" inputmode="numeric">
+                <input class="otp-box" id="otp-5" type="tel" maxlength="1" inputmode="numeric">
+            </div>
+
+            <div id="otp-err"
+                style="text-align:center;color:var(--error);font-size:.82rem;display:none;margin-bottom:8px;"></div>
+
+            <button class="btn btn-primary btn-block" onclick="verifyOTP()">Verify & Login ✅</button>
+
+            <button onclick="backToPhone()"
+                style="display:block;width:100%;margin-top:10px;background:none;border:none;color:var(--text-muted);font-size:.82rem;cursor:pointer;">←
+                Change number</button>
+
+            <div class="demo-hint">💡 <strong>Demo OTP: 1 2 3 4 5 6</strong></div>
+        </div>
+
+        <p
+            style="margin-top:16px;color:rgba(255,255,255,.6);font-size:.78rem;text-align:center;position:relative;z-index:1;">
+            Admin? <a href="admin/login.html" style="color:rgba(255,255,255,.85);font-weight:600;">Go to Admin Panel
+                →</a>
+        </p>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="js/store.js"></script>
+    <script>
+        // If already logged in, skip to home
+        if (VS.auth.isLoggedIn()) window.location.href = 'index.html';
+
+        let pendingPhone = '';
+        let pendingName = '';
+
+        function sendOTP() {
+            const phone = document.getElementById('phone-input').value.trim();
+            const name = document.getElementById('name-input').value.trim() || 'Customer';
+            if (phone.length !== 10 || !/^\d+$/.test(phone)) {
+                showToast('Enter a valid 10-digit phone number', 'error');
+                return;
+            }
+            pendingPhone = phone;
+            pendingName = name;
+            document.getElementById('otp-subtitle').textContent = `Sent to +91 ${phone}`;
+            document.getElementById('step-phone').classList.add('hidden');
+            document.getElementById('step-otp').classList.remove('hidden');
+            document.getElementById('otp-0').focus();
+            showToast('OTP sent! Use 1 2 3 4 5 6 for demo 😊', 'info');
+        }
+
+        function backToPhone() {
+            document.getElementById('step-otp').classList.add('hidden');
+            document.getElementById('step-phone').classList.remove('hidden');
+            [0, 1, 2, 3, 4, 5].forEach(i => document.getElementById(`otp-${i}`).value = '');
+        }
+
+        function verifyOTP() {
+            const otp = [0, 1, 2, 3, 4, 5].map(i => document.getElementById(`otp-${i}`).value).join('');
+            const err = document.getElementById('otp-err');
+            if (otp === '123456') {
+                err.style.display = 'none';
+                const id = VS.users.findOrCreate({ phone: pendingPhone, name: pendingName });
+                VS.auth.setSession({ id, phone: pendingPhone, name: pendingName });
+                showToast(`Welcome, ${pendingName}! 🎉`, 'success');
+                setTimeout(() => window.location.href = 'index.html', 700);
+            } else {
+                err.textContent = '❌ Wrong OTP. Use 1 2 3 4 5 6';
+                err.style.display = 'block';
+                [0, 1, 2, 3, 4, 5].forEach(i => document.getElementById(`otp-${i}`).value = '');
+                document.getElementById('otp-0').focus();
+            }
+        }
+
+        // OTP box auto-advance
+        document.querySelectorAll('.otp-box').forEach((box, i, boxes) => {
+            box.addEventListener('input', () => {
+                if (box.value && i < 5) boxes[i + 1].focus();
+                if ([0, 1, 2, 3, 4, 5].map(j => boxes[j].value).join('').length === 6) verifyOTP();
+            });
+            box.addEventListener('keydown', e => {
+                if (e.key === 'Backspace' && !box.value && i > 0) boxes[i - 1].focus();
+                if (e.key === 'Enter') verifyOTP();
+            });
+        });
+
+        // Allow pressing Enter on phone step
+        document.getElementById('phone-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendOTP(); });
+        document.getElementById('name-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendOTP(); });
+    </script>
+</body>
+
+</html>

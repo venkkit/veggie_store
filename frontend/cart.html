@@ -53,7 +53,7 @@
 <body>
 
     <nav class="navbar">
-        <a href="home.html" class="back-btn">←</a>
+        <a href="index.html" class="back-btn">←</a>
         <div style="font-size:1rem;font-weight:700;color:var(--text-primary);">My Cart</div>
         <button onclick="VS.cart.clear();renderCart();"
             style="margin-left:auto;font-size:.78rem;color:var(--error);font-weight:600;padding:6px 10px;">Clear
@@ -95,7 +95,7 @@
     <div id="toast-container"></div>
     <script src="js/store.js"></script>
     <script>
-        if (!VS.auth.isLoggedIn()) window.location.href = 'index.html';
+        if (!VS.auth.isLoggedIn()) window.location.href = 'login.html';
 
         function renderCart() {
             const cartItems = VS.cart.get();
@@ -108,7 +108,7 @@
           <div class="empty-icon">🛒</div>
           <h3 style="margin-top:16px;">Your cart is empty</h3>
           <p style="margin-top:8px;">Add fresh vegetables from our store</p>
-          <a href="home.html" class="btn btn-primary mt-md">🥦 Shop Now</a>
+          <a href="index.html" class="btn btn-primary mt-md">🥦 Shop Now</a>
         </div>`;
                 document.getElementById('order-summary-card').classList.add('hidden');
                 document.getElementById('cart-info').classList.add('hidden');
