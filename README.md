@@ -1,22 +1,68 @@
 # 🌿 VeggieStore — Local Vegetables Delivery App
 
-A **complete frontend demo** of a local vegetables e-commerce app for India.  
-No server needed — opens directly in a browser.
+A **full-stack ready** local vegetable e-commerce app for India.  
+Frontend-only demo (localStorage) with a Node.js/Express backend ready to serve it.
 
 ---
 
-## 🚀 Quick Start
+## 📁 Project Structure
+
+```
+veggie store/
+├── package.json            ← Root shortcuts (npm start / npm run dev)
+├── .gitignore
+├── README.md
+│
+├── frontend/               ← Static HTML/CSS/JS app
+│   ├── index.html          ← Customer login (OTP)
+│   ├── home.html           ← Product listing, search, filter
+│   ├── cart.html           ← Cart management
+│   ├── checkout.html       ← Address, slot, payment, WhatsApp
+│   ├── orders.html         ← Order history + status tracker
+│   ├── css/
+│   │   └── styles.css      ← Full design system (green theme)
+│   ├── js/
+│   │   └── store.js        ← Data layer (localStorage)
+│   └── admin/
+│       ├── login.html      ← Admin login
+│       ├── dashboard.html  ← Analytics + stats
+│       ├── products.html   ← Product CRUD
+│       ├── orders.html     ← Order management
+│       └── customers.html  ← Customer management
+│
+├── backend/                ← Node.js + Express server
+│   ├── server.js           ← Serves frontend/ as static files
+│   └── package.json
+│
+└── docs/
+    ├── PRD.md
+    ├── USER_FLOW.md
+    └── wireframe.md
+```
+
+---
+
+## 🚀 Running the App
+
+### Option 1 — Node.js server (recommended for deployment)
 
 ```bash
-# Option 1: Open directly (simplest)
-open frontend/index.html
+# 1. Install backend dependencies
+cd backend && npm install && cd ..
 
-# Option 2: Serve locally (recommended — avoids any CORS issues)
-npx live-server frontend/
+# 2. Start the server
+npm start
+# → http://localhost:3000
 
-# Option 3: Python simple server
-cd frontend && python3 -m http.server 3000
-# Then open: http://localhost:3000
+# Or for development with auto-reload:
+npm run dev
+```
+
+### Option 2 — Quick preview (no install)
+
+```bash
+npx live-server frontend/ --port=3000
+# → http://localhost:3000
 ```
 
 ---
@@ -27,36 +73,6 @@ cd frontend && python3 -m http.server 3000
 |------|-------|
 | **Customer** | Any 10-digit phone → OTP: **123456** |
 | **Admin** | Username: **admin** · Password: **admin123** |
-
----
-
-## 📁 Project Structure
-
-```
-frontend/
-├── index.html          ← Customer login (OTP)
-├── home.html           ← Product listing, search, filter
-├── cart.html           ← Cart management
-├── checkout.html       ← Address, slot, payment, WhatsApp
-├── orders.html         ← Order history + status tracker
-│
-├── admin/
-│   ├── login.html      ← Admin login
-│   ├── dashboard.html  ← Analytics + stats
-│   ├── products.html   ← Product CRUD
-│   ├── orders.html     ← Order management
-│   └── customers.html  ← Customer management
-│
-├── css/
-│   └── styles.css      ← Full design system (green theme)
-└── js/
-    └── store.js        ← Data layer (localStorage)
-
-docs/
-├── PRD.md              ← Product Requirements
-├── USER_FLOW.md        ← User journey diagrams
-└── wireframe.md        ← Screen wireframes
-```
 
 ---
 
@@ -73,50 +89,46 @@ docs/
 ### Admin Panel
 - 📊 Dashboard with stats & most-ordered chart
 - 🥦 Product CRUD (add, edit, delete, toggle availability)
-- 📦 Order management with status updater + detail modal
+- 📦 Order management with inline status updater
 - 👥 Customer list with per-customer order history
+
+---
+
+## ☁️ Deploying to Production
+
+### Render (free tier)
+1. Push to GitHub
+2. New Web Service → connect repo
+3. **Build command**: `cd backend && npm install`
+4. **Start command**: `node backend/server.js`
+5. Set `PORT` env var (Render sets this automatically)
+
+### Railway / Fly.io
+Same build + start commands. Set `PORT` from the dashboard.
+
+### Vercel (frontend only)
+Upload `frontend/` as a Static site — zero config needed.
 
 ---
 
 ## 🔌 Upgrading to Real Backend
 
 The data layer is in `frontend/js/store.js`.  
-Each function is a clean wrapper — swap `localStorage` calls with `fetch()` calls:
+Each method is a clean wrapper — swap `localStorage` calls with `fetch()` API calls:
 
 ```js
 // Current (localStorage)
 getProducts() { return JSON.parse(localStorage.getItem('vs_products')); }
 
-// Replace with (Node.js API)
+// Replace with (Express API)
 async getProducts() { return await fetch('/api/products').then(r => r.json()); }
 ```
 
-### Recommended Backend Stack
-- **Node.js + Express** for REST API
-- **MongoDB Atlas** (free tier) for database
-- **Twilio** or **Firebase Auth** for real OTP
-- **Render** or **Railway** for free hosting
+### Recommended Stack
+- **Node.js + Express** REST API  
+- **MongoDB Atlas** (free) + Mongoose  
+- **Twilio / Firebase Auth** for real OTP  
 
 ---
 
-## 📱 Responsive
-
-- **Mobile**: Bottom navigation, 2-column product grid
-- **Tablet**: 3-column grid, top navigation
-- **Desktop**: 4-column grid, admin sidebar
-
----
-
-## 🧪 Sample Data Included
-
-| Vegetable | Price |
-|-----------|-------|
-| Tomato 🍅 | ₹20/kg |
-| Potato 🥔 | ₹25/kg |
-| Onion 🧅  | ₹30/kg |
-| Spinach 🌿| ₹10/bunch |
-| + 12 more | — |
-
----
-
-*Built for local businesses in India · Currency: ₹ · Delivery: 2 KM radius*
+*Built for local businesses in India · Currency: ₹ · Delivery radius: 2 KM*

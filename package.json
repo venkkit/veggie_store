@@ -1,0 +1,13 @@
+{
+    "name": "veggiestore",
+    "version": "1.0.0",
+    "description": "Local vegetable delivery e-commerce app",
+    "scripts": {
+        "start": "node backend/server.js",
+        "dev": "cd backend && npx nodemon server.js",
+        "install:backend": "cd backend && npm install"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}
