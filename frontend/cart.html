@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Cart — VeggieStore</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .cart-empty {
+            text-align: center;
+            padding: 60px 24px;
+        }
+
+        .cart-empty .empty-icon {
+            font-size: 5rem;
+            opacity: .5;
+        }
+
+        .sticky-bottom {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            box-shadow: 0 -2px 20px rgba(0, 0, 0, .12);
+            padding: 16px 16px 24px;
+            z-index: 50;
+        }
+
+        .cart-total-label {
+            font-size: .8rem;
+            color: var(--text-muted);
+        }
+
+        .cart-total-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .promo-input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .promo-input-row input {
+            flex: 1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <a href="home.html" class="back-btn">←</a>
+        <div style="font-size:1rem;font-weight:700;color:var(--text-primary);">My Cart</div>
+        <button onclick="VS.cart.clear();renderCart();"
+            style="margin-left:auto;font-size:.78rem;color:var(--error);font-weight:600;padding:6px 10px;">Clear
+            All</button>
+    </nav>
+
+    <div class="page-content" style="padding-bottom:160px;">
+        <!-- Cart Items -->
+        <div id="cart-body"></div>
+
+        <!-- Order Summary (hidden when empty) -->
+        <div id="order-summary-card" class="order-summary hidden" style="margin-top:16px;">
+            <h4 class="section-title">Order Summary</h4>
+            <div class="summary-row"><span class="label">Subtotal</span><span id="sum-subtotal">₹0</span></div>
+            <div class="summary-row"><span class="label">Delivery</span><span class="free-tag">FREE 🚀</span></div>
+            <div class="summary-row" style="font-weight:700;"><span>Total</span><span id="sum-total"
+                    style="color:var(--primary);">₹0</span></div>
+        </div>
+
+        <!-- Info -->
+        <div id="cart-info" class="hidden"
+            style="margin-top:12px;background:var(--green-50);border-radius:var(--radius-lg);padding:14px 16px;font-size:.8rem;color:var(--green-800);">
+            📍 Delivery within 2 KM · 🥬 Fresh vegetables packed at time of delivery
+        </div>
+    </div>
+
+    <!-- Sticky Checkout Bar -->
+    <div class="sticky-bottom" id="checkout-bar" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div>
+                <div class="cart-total-label">Total Amount</div>
+                <div class="cart-total-value" id="sticky-total">₹0</div>
+            </div>
+            <div style="font-size:.78rem;color:var(--text-muted);" id="sticky-items"></div>
+        </div>
+        <a href="checkout.html" class="btn btn-primary btn-block btn-lg">Proceed to Checkout →</a>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="js/store.js"></script>
+    <script>
+        if (!VS.auth.isLoggedIn()) window.location.href = 'index.html';
+
+        function renderCart() {
+            const cartItems = VS.cart.get();
+            const body = document.getElementById('cart-body');
+            body.innerHTML = '';
+
+            if (cartItems.length === 0) {
+                body.innerHTML = `
+        <div class="cart-empty">
+          <div class="empty-icon">🛒</div>
+          <h3 style="margin-top:16px;">Your cart is empty</h3>
+          <p style="margin-top:8px;">Add fresh vegetables from our store</p>
+          <a href="home.html" class="btn btn-primary mt-md">🥦 Shop Now</a>
+        </div>`;
+                document.getElementById('order-summary-card').classList.add('hidden');
+                document.getElementById('cart-info').classList.add('hidden');
+                document.getElementById('checkout-bar').style.display = 'none';
+                return;
+            }
+
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
+
+            cartItems.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'cart-item';
+                el.innerHTML = `
+        <div class="cart-item-emoji">${item.emoji}</div>
+        <div class="cart-item-info">
+          <div class="cart-item-name">${item.name}</div>
+          <div class="cart-item-price">₹${item.price} / ${item.unit}</div>
+          <div class="cart-item-controls">
+            <button class="qty-btn" style="width:28px;height:28px;font-size:.9rem;" onclick="changeQty('${item.productId}',-1)">−</button>
+            <span class="qty-num" style="min-width:28px;text-align:center;">${item.qty} ${item.unit}</span>
+            <button class="qty-btn" style="width:28px;height:28px;font-size:.9rem;" onclick="changeQty('${item.productId}',1)">+</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+          <div class="cart-item-subtotal">₹${item.price * item.qty}</div>
+          <button class="del-btn" onclick="removeItem('${item.productId}')">🗑️</button>
+        </div>`;
+                wrap.appendChild(el);
+            });
+            body.appendChild(wrap);
+
+            const total = VS.cart.total();
+            const count = VS.cart.count();
+            document.getElementById('sum-subtotal').textContent = `₹${total}`;
+            document.getElementById('sum-total').textContent = `₹${total}`;
+            document.getElementById('sticky-total').textContent = `₹${total}`;
+            document.getElementById('sticky-items').textContent = `${count} item${count !== 1 ? 's' : ''}`;
+            document.getElementById('order-summary-card').classList.remove('hidden');
+            document.getElementById('cart-info').classList.remove('hidden');
+            document.getElementById('checkout-bar').style.display = 'block';
+        }
+
+        function changeQty(id, delta) {
+            const items = VS.cart.get();
+            const item = items.find(i => i.productId === id);
+            if (!item) return;
+            const newQty = item.qty + delta;
+            VS.cart.updateQty(id, newQty);
+            if (newQty <= 0) showToast('Item removed', 'info');
+            renderCart();
+        }
+
+        function removeItem(id) {
+            VS.cart.remove(id);
+            showToast('Item removed from cart', 'info');
+            renderCart();
+        }
+
+        renderCart();
+    </script>
+</body>
+
+</html>

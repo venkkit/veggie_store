@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — VeggieStore Admin</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        .chart-bar-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .chart-bar-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-bar-label {
+            font-size: .78rem;
+            color: var(--text-secondary);
+            min-width: 80px;
+            font-weight: 500;
+        }
+
+        .chart-bar-track {
+            flex: 1;
+            height: 10px;
+            background: var(--bg);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .chart-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--green-700), var(--green-400));
+            border-radius: 10px;
+            transition: width .6s ease;
+        }
+
+        .chart-bar-count {
+            font-size: .75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            min-width: 24px;
+        }
+
+        .recent-order-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .recent-order-row:last-child {
+            border: none;
+        }
+
+        .section-card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 18px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 16px;
+        }
+
+        .section-card h4 {
+            font-size: .9rem;
+            font-weight: 700;
+            margin-bottom: 14px;
+            color: var(--text-primary);
+        }
+
+        .quick-action {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 14px 16px;
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            transition: all var(--transition);
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .quick-action:hover {
+            transform: translateX(4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .quick-action .qa-icon {
+            font-size: 1.6rem;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--green-50);
+            border-radius: var(--radius-md);
+        }
+
+        .quick-action .qa-label {
+            font-weight: 600;
+            font-size: .9rem;
+        }
+
+        .quick-action .qa-sub {
+            font-size: .75rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-layout">
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <span style="font-size:1.4rem;">🌿</span> VeggieStore
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="sidebar-link active"><span class="icon">📊</span> Dashboard</a>
+                <a href="products.html" class="sidebar-link"><span class="icon">🥦</span> Products</a>
+                <a href="orders.html" class="sidebar-link"><span class="icon">📦</span> Orders</a>
+                <a href="customers.html" class="sidebar-link"><span class="icon">👥</span> Customers</a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="sidebar-link" onclick="adminLogout()"
+                    style="width:100%;text-align:left;background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;">
+                    <span class="icon">🚪</span> Logout
+                </button>
+                <a href="../home.html" class="sidebar-link" style="margin-top:4px;display:flex;">
+                    <span class="icon">🛒</span> View Store
+                </a>
+            </div>
+        </aside>
+        <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+        <!-- Main -->
+        <main class="admin-main">
+            <div class="admin-topbar">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <button class="menu-toggle" onclick="openSidebar()">☰</button>
+                    <span class="page-title">📊 Dashboard</span>
+                </div>
+                <div style="font-size:.82rem;color:var(--text-muted);">
+                    👤 <span id="admin-name"></span>
+                </div>
+            </div>
+
+            <div class="admin-content">
+
+                <!-- Stats -->
+                <div class="stat-cards" id="stat-cards"></div>
+
+                <!-- Row: Most Ordered + Recent Orders -->
+                <div style="display:grid;grid-template-columns:1fr;gap:16px;margin-top:16px;">
+
+                    <!-- Most Ordered -->
+                    <div class="section-card">
+                        <h4>🏆 Most Ordered Vegetables</h4>
+                        <div class="chart-bar-wrap" id="most-ordered"></div>
+                    </div>
+
+                    <!-- Recent Orders -->
+                    <div class="section-card">
+                        <h4>🕐 Recent Orders</h4>
+                        <div id="recent-orders"></div>
+                        <a href="orders.html"
+                            style="display:block;text-align:center;margin-top:12px;font-size:.82rem;font-weight:600;color:var(--primary);">View
+                            All Orders →</a>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div>
+                        <h4 style="font-size:.88rem;font-weight:700;margin-bottom:10px;color:var(--text-secondary);">
+                            QUICK ACTIONS</h4>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                            <a href="products.html" class="quick-action">
+                                <div class="qa-icon">🥦</div>
+                                <div>
+                                    <div class="qa-label">Products</div>
+                                    <div class="qa-sub">Manage inventory</div>
+                                </div>
+                            </a>
+                            <a href="orders.html" class="quick-action">
+                                <div class="qa-icon">📦</div>
+                                <div>
+                                    <div class="qa-label">Orders</div>
+                                    <div class="qa-sub">Update status</div>
+                                </div>
+                            </a>
+                            <a href="customers.html" class="quick-action">
+                                <div class="qa-icon">👥</div>
+                                <div>
+                                    <div class="qa-label">Customers</div>
+                                    <div class="qa-sub">View history</div>
+                                </div>
+                            </a>
+                            <a href="../home.html" class="quick-action" target="_blank">
+                                <div class="qa-icon">🛒</div>
+                                <div>
+                                    <div class="qa-label">View Store</div>
+                                    <div class="qa-sub">Customer view</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+    <div id="toast-container" style="bottom:20px;"></div>
+    <script src="../js/store.js"></script>
+    <script>
+        if (!VS.auth.isAdminLoggedIn()) window.location.href = 'login.html';
+
+        const admin = VS.auth.getAdminSession();
+        document.getElementById('admin-name').textContent = admin.name;
+
+        const stats = VS.analytics.get();
+
+        // Stat Cards
+        const statCards = [
+            { icon: '🛒', value: stats.todayOrders, label: "Today's Orders", trend: '+' + stats.todayOrders + ' today' },
+            { icon: '💰', value: VS.fmt.inr(stats.todayRevenue), label: "Today's Revenue", trend: 'Total: ' + VS.fmt.inr(stats.totalRevenue) },
+            { icon: '⏳', value: stats.pendingOrders, label: 'Pending Orders', trend: 'Need attention' },
+            { icon: '👥', value: stats.totalCustomers, label: 'Total Customers', trend: 'Registered users' },
+        ];
+        document.getElementById('stat-cards').innerHTML = statCards.map(c => `
+    <div class="stat-card">
+      <div class="stat-icon">${c.icon}</div>
+      <div class="stat-value">${c.value}</div>
+      <div class="stat-label">${c.label}</div>
+      <div class="stat-trend">${c.trend}</div>
+    </div>`).join('');
+
+        // Most Ordered Chart
+        const max = stats.mostOrdered[0]?.[1] || 1;
+        document.getElementById('most-ordered').innerHTML = stats.mostOrdered.map(([name, count]) => `
+    <div class="chart-bar-item">
+      <div class="chart-bar-label">${name}</div>
+      <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${(count / max * 100).toFixed(0)}%"></div></div>
+      <div class="chart-bar-count">${count}</div>
+    </div>`).join('') || '<p style="font-size:.82rem;color:var(--text-muted);">No data yet</p>';
+
+        // Recent Orders
+        const recent = VS.orders.getAll().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5);
+        document.getElementById('recent-orders').innerHTML = recent.map(o => `
+    <div class="recent-order-row">
+      <div>
+        <div style="font-size:.85rem;font-weight:600;">#${o.id} · ${o.userName}</div>
+        <div style="font-size:.72rem;color:var(--text-muted);">${VS.fmt.date(o.createdAt)}</div>
+      </div>
+      <div style="text-align:right;">
+        <span class="badge ${VS.fmt.statusBadge(o.status)}">${VS.fmt.statusLabel(o.status)}</span>
+        <div style="font-size:.82rem;font-weight:700;color:var(--primary);margin-top:4px;">${VS.fmt.inr(o.total)}</div>
+      </div>
+    </div>`).join('') || '<p style="font-size:.82rem;color:var(--text-muted);">No recent orders</p>';
+
+        function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebar-overlay').classList.add('open'); }
+        function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('open'); }
+        function adminLogout() { VS.auth.clearAdminSession(); window.location.href = 'login.html'; }
+    </script>
+</body>
+
+</html>

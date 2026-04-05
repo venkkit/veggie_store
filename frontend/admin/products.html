@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products — VeggieStore Admin</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        .product-row-img {
+            font-size: 1.8rem;
+            text-align: center;
+        }
+
+        .availability-toggle {
+            width: 40px;
+            height: 22px;
+            background: var(--border);
+            border-radius: 11px;
+            position: relative;
+            cursor: pointer;
+            transition: background var(--transition);
+        }
+
+        .availability-toggle.on {
+            background: var(--green-500);
+        }
+
+        .availability-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform var(--transition);
+        }
+
+        .availability-toggle.on::after {
+            transform: translateX(18px);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand"><span style="font-size:1.4rem;">🌿</span> VeggieStore</div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="sidebar-link"><span class="icon">📊</span> Dashboard</a>
+                <a href="products.html" class="sidebar-link active"><span class="icon">🥦</span> Products</a>
+                <a href="orders.html" class="sidebar-link"><span class="icon">📦</span> Orders</a>
+                <a href="customers.html" class="sidebar-link"><span class="icon">👥</span> Customers</a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="sidebar-link" onclick="adminLogout()"
+                    style="width:100%;text-align:left;background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;"><span
+                        class="icon">🚪</span> Logout</button>
+            </div>
+        </aside>
+        <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+        <main class="admin-main">
+            <div class="admin-topbar">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <button class="menu-toggle" onclick="openSidebar()">☰</button>
+                    <span class="page-title">🥦 Products</span>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="openProductModal()">+ Add Product</button>
+            </div>
+
+            <div class="admin-content">
+                <!-- Search + Filter -->
+                <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+                    <div class="search-wrap" style="flex:1;min-width:180px;">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" class="form-input search-input" id="search-products"
+                            placeholder="Search products…" oninput="renderProducts()">
+                    </div>
+                    <select class="form-input form-select" id="filter-cat" style="width:140px;"
+                        onchange="renderProducts()">
+                        <option value="all">All Categories</option>
+                        <option value="leafy">Leafy</option>
+                        <option value="root">Root</option>
+                        <option value="seasonal">Seasonal</option>
+                    </select>
+                </div>
+
+                <!-- Table -->
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:50px;">Icon</th>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Price</th>
+                                <th>Unit</th>
+                                <th>Stock</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Product Modal -->
+    <div class="modal-overlay center hidden" id="product-modal" onclick="closeProductModal(event)">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title" id="modal-title">Add New Product</span>
+                <button class="modal-close" onclick="closeProductModal()">✕</button>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group" style="grid-column:1/-1;">
+                    <label class="form-label">Product Name *</label>
+                    <input type="text" class="form-input" id="p-name" placeholder="e.g. Tomato">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Price (₹) *</label>
+                    <input type="number" class="form-input" id="p-price" placeholder="20" min="1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Unit *</label>
+                    <select class="form-input form-select" id="p-unit">
+                        <option value="kg">kg</option>
+                        <option value="bunch">bunch</option>
+                        <option value="piece">piece</option>
+                        <option value="dozen">dozen</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category *</label>
+                    <select class="form-input form-select" id="p-category">
+                        <option value="seasonal">Seasonal</option>
+                        <option value="leafy">Leafy</option>
+                        <option value="root">Root</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Stock Qty *</label>
+                    <input type="number" class="form-input" id="p-stock" placeholder="50" min="0">
+                </div>
+                <div class="form-group" style="grid-column:1/-1;">
+                    <label class="form-label">Emoji Icon</label>
+                    <input type="text" class="form-input" id="p-emoji" placeholder="🥦" maxlength="4">
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:20px;">
+                <button class="btn btn-outline" onclick="closeProductModal()" style="flex:1;">Cancel</button>
+                <button class="btn btn-primary" onclick="saveProduct()" style="flex:2;" id="save-product-btn">Save
+                    Product</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div class="modal-overlay center hidden" id="delete-modal">
+        <div class="modal" style="max-width:380px;">
+            <div style="text-align:center;padding:8px 0 16px;">
+                <div style="font-size:2.5rem;">🗑️</div>
+                <h3 style="margin-top:12px;">Delete Product?</h3>
+                <p style="font-size:.85rem;color:var(--text-muted);margin-top:6px;" id="delete-name"></p>
+            </div>
+            <div style="display:flex;gap:10px;">
+                <button class="btn btn-outline" onclick="closeDeleteModal()" style="flex:1;">Cancel</button>
+                <button class="btn btn-danger" onclick="confirmDelete()" style="flex:1;">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" style="bottom:20px;"></div>
+    <script src="../js/store.js"></script>
+    <script>
+        if (!VS.auth.isAdminLoggedIn()) window.location.href = 'login.html';
+
+        let editingId = null;
+        let deletingId = null;
+
+        function renderProducts() {
+            const query = document.getElementById('search-products').value.toLowerCase();
+            const cat = document.getElementById('filter-cat').value;
+            let products = VS.products.getAll();
+            if (cat !== 'all') products = products.filter(p => p.category === cat);
+            if (query) products = products.filter(p => p.name.toLowerCase().includes(query));
+
+            const tbody = document.getElementById('products-tbody');
+            tbody.innerHTML = '';
+            products.forEach(p => {
+                const stock = p.stock;
+                const stockColor = stock === 0 ? 'var(--error)' : stock < 10 ? 'var(--warning)' : 'var(--success)';
+                const row = document.createElement('tr');
+                row.innerHTML = `
+        <td class="product-row-img">${p.emoji}</td>
+        <td><strong>${p.name}</strong></td>
+        <td><span style="text-transform:capitalize;font-size:.8rem;color:var(--text-muted);">${p.category}</span></td>
+        <td><strong>₹${p.price}</strong></td>
+        <td style="font-size:.82rem;color:var(--text-muted);">${p.unit}</td>
+        <td><span style="font-weight:700;color:${stockColor};">${stock}</span></td>
+        <td>
+          <div class="availability-toggle ${p.isAvailable ? 'on' : ''}" onclick="toggleAvailability('${p.id}')" title="${p.isAvailable ? 'Available' : 'Unavailable'}"></div>
+        </td>
+        <td>
+          <div class="td-actions">
+            <button class="btn btn-outline btn-sm" onclick="openProductModal('${p.id}')">✏️ Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="openDeleteModal('${p.id}')">🗑️</button>
+          </div>
+        </td>`;
+                tbody.appendChild(row);
+            });
+
+            if (!products.length) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">No products found</td></tr>`;
+            }
+        }
+
+        function openProductModal(id = null) {
+            editingId = id;
+            document.getElementById('modal-title').textContent = id ? 'Edit Product' : 'Add New Product';
+            if (id) {
+                const p = VS.products.get(id);
+                document.getElementById('p-name').value = p.name;
+                document.getElementById('p-price').value = p.price;
+                document.getElementById('p-unit').value = p.unit;
+                document.getElementById('p-category').value = p.category;
+                document.getElementById('p-stock').value = p.stock;
+                document.getElementById('p-emoji').value = p.emoji;
+            } else {
+                ['p-name', 'p-price', 'p-stock', 'p-emoji'].forEach(id => document.getElementById(id).value = '');
+                document.getElementById('p-unit').value = 'kg';
+                document.getElementById('p-category').value = 'seasonal';
+            }
+            document.getElementById('product-modal').classList.remove('hidden');
+        }
+
+        function closeProductModal(e) {
+            if (!e || e.target === document.getElementById('product-modal')) {
+                document.getElementById('product-modal').classList.add('hidden');
+                editingId = null;
+            }
+        }
+
+        function saveProduct() {
+            const name = document.getElementById('p-name').value.trim();
+            const price = parseFloat(document.getElementById('p-price').value);
+            const unit = document.getElementById('p-unit').value;
+            const category = document.getElementById('p-category').value;
+            const stock = parseInt(document.getElementById('p-stock').value);
+            const emoji = document.getElementById('p-emoji').value.trim() || '🥦';
+
+            if (!name) { showToast('Enter product name', 'error'); return; }
+            if (isNaN(price) || price <= 0) { showToast('Enter valid price', 'error'); return; }
+            if (isNaN(stock) || stock < 0) { showToast('Enter valid stock', 'error'); return; }
+
+            const data = { name, price, unit, category, stock, emoji, isAvailable: stock > 0 };
+
+            if (editingId) {
+                VS.products.update({ ...VS.products.get(editingId), ...data });
+                showToast('Product updated! ✅');
+            } else {
+                VS.products.add(data);
+                showToast('Product added! 🎉');
+            }
+            closeProductModal();
+            renderProducts();
+        }
+
+        function toggleAvailability(id) {
+            const p = VS.products.get(id);
+            VS.products.update({ ...p, isAvailable: !p.isAvailable });
+            showToast(`${p.name} marked as ${p.isAvailable ? 'unavailable' : 'available'}`);
+            renderProducts();
+        }
+
+        function openDeleteModal(id) {
+            deletingId = id;
+            const p = VS.products.get(id);
+            document.getElementById('delete-name').textContent = `"${p.name}" will be permanently removed.`;
+            document.getElementById('delete-modal').classList.remove('hidden');
+        }
+        function closeDeleteModal() { document.getElementById('delete-modal').classList.add('hidden'); deletingId = null; }
+        function confirmDelete() {
+            const p = VS.products.get(deletingId);
+            VS.products.delete(deletingId);
+            showToast(`${p.name} deleted`, 'info');
+            closeDeleteModal();
+            renderProducts();
+        }
+
+        function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebar-overlay').classList.add('open'); }
+        function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('open'); }
+        function adminLogout() { VS.auth.clearAdminSession(); window.location.href = 'login.html'; }
+
+        renderProducts();
+    </script>
+</body>
+
+</html>

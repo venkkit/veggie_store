@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout — VeggieStore</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .section-card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 18px 16px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 14px;
+        }
+
+        .section-card h3 {
+            font-size: .95rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cart-mini-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 7px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: .85rem;
+        }
+
+        .cart-mini-item:last-child {
+            border: none;
+        }
+
+        .whatsapp-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #e8f5e9;
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            cursor: pointer;
+        }
+
+        .toggle-switch {
+            width: 44px;
+            height: 24px;
+            background: var(--green-400);
+            border-radius: 12px;
+            position: relative;
+            transition: background var(--transition);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform var(--transition);
+        }
+
+        .toggle-switch.on::after {
+            transform: translateX(20px);
+        }
+
+        .sticky-place {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            padding: 16px 16px 24px;
+            box-shadow: 0 -2px 20px rgba(0, 0, 0, .12);
+            z-index: 50;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <a href="cart.html" class="back-btn">←</a>
+        <div style="font-size:1rem;font-weight:700;">Checkout</div>
+        <div class="cart-btn" style="pointer-events:none;">
+            🛒 <span class="cart-badge" id="cart-badge">0</span>
+        </div>
+    </nav>
+
+    <div class="page-content" style="padding-bottom:140px;">
+
+        <!-- Cart Summary -->
+        <div class="section-card">
+            <h3>🛒 Order Items</h3>
+            <div id="mini-cart"></div>
+            <div style="display:flex;justify-content:space-between;padding-top:10px;font-weight:700;font-size:.95rem;">
+                <span>Total</span>
+                <span id="order-total" style="color:var(--primary);"></span>
+            </div>
+        </div>
+
+        <!-- Delivery Address -->
+        <div class="section-card">
+            <h3>📍 Delivery Address</h3>
+            <div class="form-group">
+                <label class="form-label">House No / Flat / Building</label>
+                <input type="text" class="form-input" id="addr-house" placeholder="e.g. 12A, Green Residency">
+            </div>
+            <div class="form-group mt-sm">
+                <label class="form-label">Street / Area / Colony</label>
+                <input type="text" class="form-input" id="addr-street" placeholder="e.g. Velachery Main Road">
+            </div>
+            <div class="form-group mt-sm">
+                <label class="form-label">Landmark <span style="color:var(--text-muted);">(optional)</span></label>
+                <input type="text" class="form-input" id="addr-landmark" placeholder="e.g. Near BSNL tower">
+            </div>
+        </div>
+
+        <!-- Delivery Slot -->
+        <div class="section-card">
+            <h3>⏰ Delivery Slot</h3>
+            <div class="option-cards">
+                <div class="option-card selected" id="slot-morning" onclick="selectSlot('morning')">
+                    <div class="opt-icon">☀️</div>
+                    <div class="opt-label">Morning</div>
+                    <div class="opt-sub">6 AM – 10 AM</div>
+                </div>
+                <div class="option-card" id="slot-evening" onclick="selectSlot('evening')">
+                    <div class="opt-icon">🌇</div>
+                    <div class="opt-label">Evening</div>
+                    <div class="opt-sub">5 PM – 8 PM</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Method -->
+        <div class="section-card">
+            <h3>💳 Payment Method</h3>
+            <div class="option-cards">
+                <div class="option-card selected" id="pay-cod" onclick="selectPayment('cod')">
+                    <div class="opt-icon">💵</div>
+                    <div class="opt-label">Cash on Delivery</div>
+                    <div class="opt-sub">Pay when delivered</div>
+                </div>
+                <div class="option-card" id="pay-upi" onclick="selectPayment('upi')">
+                    <div class="opt-icon">📱</div>
+                    <div class="opt-label">UPI</div>
+                    <div class="opt-sub">GPay / PhonePe</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WhatsApp Confirmation -->
+        <div class="section-card">
+            <h3>📲 Order Confirmation</h3>
+            <div class="whatsapp-toggle" onclick="toggleWhatsApp()">
+                <div>
+                    <div style="font-size:.88rem;font-weight:600;color:var(--green-900);">📱 Send via WhatsApp</div>
+                    <div style="font-size:.75rem;color:var(--text-muted);margin-top:2px;">Get order details on WhatsApp
+                    </div>
+                </div>
+                <div class="toggle-switch on" id="wa-toggle"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Sticky Place Order -->
+    <div class="sticky-place">
+        <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+            <span style="font-size:.82rem;color:var(--text-muted);">Amount Payable</span>
+            <span style="font-weight:800;font-size:1.1rem;color:var(--primary);" id="sticky-amt"></span>
+        </div>
+        <button class="btn btn-primary btn-block btn-lg" onclick="placeOrder()">
+            ✅ Place Order
+        </button>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="js/store.js"></script>
+    <script>
+        if (!VS.auth.isLoggedIn()) window.location.href = 'index.html';
+        if (VS.cart.count() === 0) window.location.href = 'cart.html';
+
+        const session = VS.auth.getSession();
+        let selectedSlot = 'morning';
+        let selectedPayment = 'cod';
+        let waEnabled = true;
+
+        // Render cart summary
+        const cartItems = VS.cart.get();
+        const total = VS.cart.total();
+        const miniCart = document.getElementById('mini-cart');
+        cartItems.forEach(i => {
+            miniCart.innerHTML += `
+      <div class="cart-mini-item">
+        <span>${i.emoji} ${i.name} × ${i.qty} ${i.unit}</span>
+        <span style="font-weight:600;">₹${i.price * i.qty}</span>
+      </div>`;
+        });
+        document.getElementById('order-total').textContent = `₹${total}`;
+        document.getElementById('sticky-amt').textContent = `₹${total}`;
+
+        updateCartBadge();
+
+        function selectSlot(slot) {
+            selectedSlot = slot;
+            document.getElementById('slot-morning').classList.toggle('selected', slot === 'morning');
+            document.getElementById('slot-evening').classList.toggle('selected', slot === 'evening');
+        }
+
+        function selectPayment(pay) {
+            selectedPayment = pay;
+            document.getElementById('pay-cod').classList.toggle('selected', pay === 'cod');
+            document.getElementById('pay-upi').classList.toggle('selected', pay === 'upi');
+        }
+
+        function toggleWhatsApp() {
+            waEnabled = !waEnabled;
+            document.getElementById('wa-toggle').classList.toggle('on', waEnabled);
+        }
+
+        function placeOrder() {
+            const house = document.getElementById('addr-house').value.trim();
+            const street = document.getElementById('addr-street').value.trim();
+            const landmark = document.getElementById('addr-landmark').value.trim();
+
+            if (!house) { showToast('Enter house / flat number', 'error'); return; }
+            if (!street) { showToast('Enter street / area', 'error'); return; }
+
+            const address = [house, street, landmark].filter(Boolean).join(', ');
+
+            const order = VS.orders.place({
+                userId: session.id,
+                userName: session.name,
+                userPhone: session.phone,
+                items: cartItems,
+                total,
+                address,
+                slot: selectedSlot,
+                payment: selectedPayment,
+            });
+
+            if (waEnabled) openWhatsApp(order);
+            window.location.href = `orders.html?success=${order.id}`;
+        }
+
+        function openWhatsApp(order) {
+            const slotLabel = order.slot === 'morning' ? 'Morning (6–10 AM)' : 'Evening (5–8 PM)';
+            const payLabel = order.payment === 'cod' ? 'Cash on Delivery' : 'UPI';
+            const itemsList = order.items.map(i => `  • ${i.emoji} ${i.name} × ${i.qty} ${i.unit} — ₹${i.price * i.qty}`).join('%0A');
+            const msg = encodeURIComponent(
+                `🥦 *New Order from VeggieStore!*\n\n` +
+                `Order ID: #${order.id}\n` +
+                `Customer: ${order.userName} (${order.userPhone})\n` +
+                `Items:\n` + order.items.map(i => `  • ${i.emoji} ${i.name} × ${i.qty} ${i.unit} — ₹${i.price * i.qty}`).join('\n') + '\n' +
+                `Total: ₹${order.total}\n` +
+                `Slot: ${slotLabel}\n` +
+                `Payment: ${payLabel}\n` +
+                `Address: ${order.address}\n\n` +
+                `📍 VeggieStore — Fresh & Local`
+            );
+            // Replace with real admin phone number
+            window.open(`https://wa.me/919876543210?text=${msg}`, '_blank');
+        }
+    </script>
+</body>
+
+</html>

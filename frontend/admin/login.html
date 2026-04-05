@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login — VeggieStore</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        .admin-hint {
+            background: rgba(255, 255, 255, .12);
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
+            font-size: .78rem;
+            color: rgba(255, 255, 255, .85);
+            margin-top: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-page">
+        <div style="text-align:center;color:#fff;margin-bottom:28px;position:relative;z-index:1;">
+            <div style="font-size:3rem;">🌿</div>
+            <h1 style="color:#fff;font-size:1.8rem;margin-top:8px;">VeggieStore</h1>
+            <p style="color:rgba(255,255,255,.75);font-size:.85rem;margin-top:4px;">Admin Panel — Store Management</p>
+        </div>
+
+        <div class="auth-card">
+            <div style="text-align:center;margin-bottom:20px;">
+                <div style="font-size:2rem;">🔐</div>
+                <h3 style="margin-top:8px;">Admin Login</h3>
+                <p style="font-size:.82rem;color:var(--text-muted);">Enter your credentials to continue</p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" class="form-input" id="username" placeholder="admin" autocomplete="username">
+            </div>
+            <div class="form-group mt-sm">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-input" id="password" placeholder="••••••••"
+                    autocomplete="current-password">
+            </div>
+            <div id="err-msg" style="color:var(--error);font-size:.82rem;margin-top:8px;display:none;"></div>
+            <button class="btn btn-primary btn-block mt-md" onclick="adminLogin()">Login to Dashboard →</button>
+            <div class="admin-hint" style="background:var(--green-50);color:var(--green-900);">
+                💡 <strong>Demo credentials:</strong><br>Username: <code>admin</code> · Password: <code>admin123</code>
+            </div>
+        </div>
+
+        <p style="margin-top:20px;color:rgba(255,255,255,.6);font-size:.8rem;position:relative;z-index:1;">
+            <a href="../index.html" style="color:rgba(255,255,255,.85);font-weight:600;">← Back to Customer App</a>
+        </p>
+    </div>
+    <div id="toast-container"></div>
+    <script src="../js/store.js"></script>
+    <script>
+        if (VS.auth.isAdminLoggedIn()) window.location.href = 'dashboard.html';
+
+        document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') adminLogin(); });
+
+        function adminLogin() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const err = document.getElementById('err-msg');
+            if (username === 'admin' && password === 'admin123') {
+                VS.auth.setAdminSession({ username: 'admin', name: 'Store Admin' });
+                showToast('Welcome, Admin! 👋', 'success');
+                setTimeout(() => window.location.href = 'dashboard.html', 600);
+            } else {
+                err.textContent = '❌ Invalid username or password. Use admin / admin123';
+                err.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+
+</html>

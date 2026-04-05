@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customers — VeggieStore Admin</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+
+<body>
+    <div class="admin-layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand"><span style="font-size:1.4rem;">🌿</span> VeggieStore</div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="sidebar-link"><span class="icon">📊</span> Dashboard</a>
+                <a href="products.html" class="sidebar-link"><span class="icon">🥦</span> Products</a>
+                <a href="orders.html" class="sidebar-link"><span class="icon">📦</span> Orders</a>
+                <a href="customers.html" class="sidebar-link active"><span class="icon">👥</span> Customers</a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="sidebar-link" onclick="adminLogout()"
+                    style="width:100%;text-align:left;background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;"><span
+                        class="icon">🚪</span> Logout</button>
+            </div>
+        </aside>
+        <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+        <main class="admin-main">
+            <div class="admin-topbar">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <button class="menu-toggle" onclick="openSidebar()">☰</button>
+                    <span class="page-title">👥 Customers</span>
+                </div>
+                <span id="cust-count" style="font-size:.82rem;color:var(--text-muted);"></span>
+            </div>
+
+            <div class="admin-content">
+                <div style="margin-bottom:16px;">
+                    <div class="search-wrap">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" class="form-input search-input" id="search-cust"
+                            placeholder="Search by name or phone…" oninput="renderCustomers()">
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Total Orders</th>
+                                <th>Total Spent</th>
+                                <th>Joined</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cust-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Customer History Modal -->
+    <div class="modal-overlay center hidden" id="history-modal" onclick="closeHistoryModal(event)">
+        <div class="modal" style="max-width:500px;">
+            <div class="modal-header">
+                <span class="modal-title" id="hm-name"></span>
+                <button class="modal-close" onclick="closeHistoryModal()">✕</button>
+            </div>
+            <div id="hm-body"></div>
+        </div>
+    </div>
+
+    <div id="toast-container" style="bottom:20px;"></div>
+    <script src="../js/store.js"></script>
+    <script>
+        if (!VS.auth.isAdminLoggedIn()) window.location.href = 'login.html';
+
+        function renderCustomers() {
+            const query = document.getElementById('search-cust').value.toLowerCase();
+            const allOrders = VS.orders.getAll();
+            let users = VS.users.getAll();
+            if (query) users = users.filter(u => u.name.toLowerCase().includes(query) || u.phone.includes(query));
+
+            document.getElementById('cust-count').textContent = `${users.length} customer${users.length !== 1 ? 's' : ''}`;
+
+            const tbody = document.getElementById('cust-tbody');
+            tbody.innerHTML = '';
+
+            if (!users.length) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No customers found</td></tr>`;
+                return;
+            }
+
+            users.forEach((u, idx) => {
+                const userOrders = allOrders.filter(o => o.userId === u.id);
+                const totalSpent = userOrders.reduce((s, o) => s + o.total, 0);
+                const joined = u.joined ? new Date(u.joined).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+        <td style="font-size:.78rem;color:var(--text-muted);">${idx + 1}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:34px;height:34px;border-radius:50%;background:var(--green-100);display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;color:var(--primary);">${u.name[0]}</div>
+            <div>
+              <div style="font-weight:600;font-size:.88rem;">${u.name}</div>
+            </div>
+          </div>
+        </td>
+        <td style="font-size:.85rem;">📞 ${u.phone}</td>
+        <td>
+          <span style="font-weight:700;font-size:1rem;color:var(--text-primary);">${userOrders.length}</span>
+          <span style="font-size:.72rem;color:var(--text-muted);"> orders</span>
+        </td>
+        <td style="font-weight:700;color:var(--primary);">${VS.fmt.inr(totalSpent)}</td>
+        <td style="font-size:.78rem;color:var(--text-muted);">${joined}</td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="showHistory('${u.id}')">📋 History</button>
+        </td>`;
+                tbody.appendChild(row);
+            });
+        }
+
+        function showHistory(userId) {
+            const user = VS.users.getAll().find(u => u.id === userId);
+            const orders = VS.orders.getAll().filter(o => o.userId === userId).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            const total = orders.reduce((s, o) => s + o.total, 0);
+
+            document.getElementById('hm-name').textContent = `${user.name}'s Orders`;
+            document.getElementById('hm-body').innerHTML = `
+      <div style="display:flex;gap:16px;margin-bottom:16px;">
+        <div style="flex:1;text-align:center;background:var(--green-50);border-radius:var(--radius-md);padding:10px;">
+          <div style="font-size:1.4rem;font-weight:800;">${orders.length}</div>
+          <div style="font-size:.72rem;color:var(--text-muted);">Total Orders</div>
+        </div>
+        <div style="flex:1;text-align:center;background:var(--green-50);border-radius:var(--radius-md);padding:10px;">
+          <div style="font-size:1.4rem;font-weight:800;color:var(--primary);">${VS.fmt.inr(total)}</div>
+          <div style="font-size:.72rem;color:var(--text-muted);">Total Spent</div>
+        </div>
+      </div>
+      ${orders.length === 0 ? '<p style="text-align:center;color:var(--text-muted);padding:24px;">No orders yet</p>' :
+                    orders.map(o => `
+          <div style="background:var(--bg);border-radius:var(--radius-md);padding:12px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span style="font-weight:700;font-size:.85rem;color:var(--primary);">#${o.id}</span>
+              <span class="badge ${VS.fmt.statusBadge(o.status)}">${VS.fmt.statusLabel(o.status)}</span>
+            </div>
+            <div style="font-size:.78rem;color:var(--text-muted);">${VS.fmt.date(o.createdAt)}</div>
+            <div style="font-size:.8rem;margin-top:4px;">${o.items.map(i => `${i.emoji} ${i.name} ×${i.qty}`).join(' · ')}</div>
+            <div style="font-weight:700;color:var(--primary);margin-top:4px;font-size:.88rem;">${VS.fmt.inr(o.total)}</div>
+          </div>`).join('')
+                }`;
+            document.getElementById('history-modal').classList.remove('hidden');
+        }
+
+        function closeHistoryModal(e) {
+            if (!e || e.target === document.getElementById('history-modal')) {
+                document.getElementById('history-modal').classList.add('hidden');
+            }
+        }
+
+        function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebar-overlay').classList.add('open'); }
+        function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('open'); }
+        function adminLogout() { VS.auth.clearAdminSession(); window.location.href = 'login.html'; }
+
+        renderCustomers();
+    </script>
+</body>
+
+</html>

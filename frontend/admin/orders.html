@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders — VeggieStore Admin</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        .status-select {
+            padding: 5px 10px;
+            border-radius: var(--radius-md);
+            border: 1.5px solid var(--border);
+            font-size: .78rem;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            transition: border-color var(--transition);
+            background: var(--surface);
+        }
+
+        .status-select:focus {
+            border-color: var(--green-500);
+        }
+
+        .order-detail-items {
+            font-size: .8rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand"><span style="font-size:1.4rem;">🌿</span> VeggieStore</div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="sidebar-link"><span class="icon">📊</span> Dashboard</a>
+                <a href="products.html" class="sidebar-link"><span class="icon">🥦</span> Products</a>
+                <a href="orders.html" class="sidebar-link active"><span class="icon">📦</span> Orders</a>
+                <a href="customers.html" class="sidebar-link"><span class="icon">👥</span> Customers</a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="sidebar-link" onclick="adminLogout()"
+                    style="width:100%;text-align:left;background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;"><span
+                        class="icon">🚪</span> Logout</button>
+            </div>
+        </aside>
+        <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+        <main class="admin-main">
+            <div class="admin-topbar">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <button class="menu-toggle" onclick="openSidebar()">☰</button>
+                    <span class="page-title">📦 Orders</span>
+                </div>
+                <div style="font-size:.82rem;color:var(--text-muted);" id="order-count-label"></div>
+            </div>
+
+            <div class="admin-content">
+                <!-- Filter Tabs + Search -->
+                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px;">
+                    <div class="tab-group" id="tab-group">
+                        <div class="tab active" onclick="setTab('all',this)">All</div>
+                        <div class="tab" onclick="setTab('pending',this)">⏳ Pending</div>
+                        <div class="tab" onclick="setTab('packed',this)">📦 Packed</div>
+                        <div class="tab" onclick="setTab('out_for_delivery',this)">🚴 On Way</div>
+                        <div class="tab" onclick="setTab('delivered',this)">✅ Done</div>
+                    </div>
+                    <div class="search-wrap" style="flex:1;min-width:160px;">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" class="form-input search-input" id="search-orders"
+                            placeholder="Search name, phone, ID…" oninput="renderOrders()">
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Items</th>
+                                <th>Total</th>
+                                <th>Slot</th>
+                                <th>Payment</th>
+                                <th>Status</th>
+                                <th>Update</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Order Detail Modal -->
+    <div class="modal-overlay center hidden" id="detail-modal" onclick="closeDetailModal(event)">
+        <div class="modal" style="max-width:480px;">
+            <div class="modal-header">
+                <span class="modal-title" id="dm-id"></span>
+                <button class="modal-close" onclick="closeDetailModal()">✕</button>
+            </div>
+            <div id="dm-body"></div>
+        </div>
+    </div>
+
+    <div id="toast-container" style="bottom:20px;"></div>
+    <script src="../js/store.js"></script>
+    <script>
+        if (!VS.auth.isAdminLoggedIn()) window.location.href = 'login.html';
+
+        let activeTab = 'all';
+
+        function setTab(tab, el) {
+            activeTab = tab;
+            document.querySelectorAll('#tab-group .tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            renderOrders();
+        }
+
+        function renderOrders() {
+            const query = document.getElementById('search-orders').value.toLowerCase();
+            let orders = VS.orders.getAll().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            if (activeTab !== 'all') orders = orders.filter(o => o.status === activeTab);
+            if (query) orders = orders.filter(o =>
+                o.id.toLowerCase().includes(query) ||
+                o.userName.toLowerCase().includes(query) ||
+                o.userPhone.includes(query)
+            );
+
+            document.getElementById('order-count-label').textContent = `${orders.length} order${orders.length !== 1 ? 's' : ''}`;
+
+            const tbody = document.getElementById('orders-tbody');
+            tbody.innerHTML = '';
+
+            if (!orders.length) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">No orders found</td></tr>`;
+                return;
+            }
+
+            orders.forEach(o => {
+                const itemsSummary = o.items.map(i => `${i.emoji}${i.name}×${i.qty}`).join(', ');
+                const slotLabel = o.slot === 'morning' ? '☀️ Morning' : '🌇 Evening';
+                const payLabel = o.payment === 'cod' ? '💵 COD' : '📱 UPI';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+        <td>
+          <div style="font-weight:700;font-size:.85rem;color:var(--primary);cursor:pointer;" onclick="showDetail('${o.id}')">#${o.id}</div>
+          <div style="font-size:.7rem;color:var(--text-muted);">${VS.fmt.date(o.createdAt)}</div>
+        </td>
+        <td>
+          <div style="font-weight:600;font-size:.85rem;">${o.userName}</div>
+          <div style="font-size:.72rem;color:var(--text-muted);">📞 ${o.userPhone}</div>
+        </td>
+        <td>
+          <div style="font-size:.78rem;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${itemsSummary}</div>
+          <div style="font-size:.7rem;color:var(--text-muted);">${o.items.length} item${o.items.length !== 1 ? 's' : ''}</div>
+        </td>
+        <td><strong>${VS.fmt.inr(o.total)}</strong></td>
+        <td style="font-size:.78rem;">${slotLabel}</td>
+        <td style="font-size:.78rem;">${payLabel}</td>
+        <td><span class="badge ${VS.fmt.statusBadge(o.status)}">${VS.fmt.statusLabel(o.status)}</span></td>
+        <td>
+          <select class="status-select" onchange="updateStatus('${o.id}',this.value)">
+            <option value="pending"         ${o.status === 'pending' ? 'selected' : ''}>⏳ Pending</option>
+            <option value="packed"          ${o.status === 'packed' ? 'selected' : ''}>📦 Packed</option>
+            <option value="out_for_delivery"${o.status === 'out_for_delivery' ? 'selected' : ''}>🚴 On Way</option>
+            <option value="delivered"       ${o.status === 'delivered' ? 'selected' : ''}>✅ Delivered</option>
+          </select>
+        </td>`;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateStatus(id, status) {
+            VS.orders.updateStatus(id, status);
+            showToast(`Order #${id} → ${VS.fmt.statusLabel(status)} ✅`);
+            renderOrders();
+        }
+
+        function showDetail(id) {
+            const o = VS.orders.getAll().find(x => x.id === id);
+            if (!o) return;
+            document.getElementById('dm-id').textContent = `Order #${o.id}`;
+            document.getElementById('dm-body').innerHTML = `
+      <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+        <span class="badge ${VS.fmt.statusBadge(o.status)}">${VS.fmt.statusLabel(o.status)}</span>
+        <span style="font-size:.78rem;color:var(--text-muted);">${VS.fmt.date(o.createdAt)}</span>
+      </div>
+      <div style="background:var(--green-50);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:12px;">
+        <div style="font-weight:700;font-size:.9rem;">👤 ${o.userName}</div>
+        <div style="font-size:.8rem;color:var(--text-muted);">📞 ${o.userPhone}</div>
+        <div style="font-size:.78rem;color:var(--text-muted);margin-top:4px;">📍 ${o.address}</div>
+        <div style="font-size:.78rem;color:var(--text-muted);">⏰ ${o.slot === 'morning' ? 'Morning (6-10 AM)' : 'Evening (5-8 PM)'} | 💳 ${o.payment === 'cod' ? 'Cash on Delivery' : 'UPI'}</div>
+      </div>
+      <div>
+        ${o.items.map(i => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:.85rem;">
+          <span>${i.emoji} ${i.name} × ${i.qty} ${i.unit}</span>
+          <strong>₹${i.price * i.qty}</strong>
+        </div>`).join('')}
+        <div style="display:flex;justify-content:space-between;padding-top:12px;font-weight:800;font-size:1rem;">
+          <span>Total</span><span style="color:var(--primary);">₹${o.total}</span>
+        </div>
+      </div>`;
+            document.getElementById('detail-modal').classList.remove('hidden');
+        }
+
+        function closeDetailModal(e) {
+            if (!e || e.target === document.getElementById('detail-modal')) {
+                document.getElementById('detail-modal').classList.add('hidden');
+            }
+        }
+
+        function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebar-overlay').classList.add('open'); }
+        function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('open'); }
+        function adminLogout() { VS.auth.clearAdminSession(); window.location.href = 'login.html'; }
+
+        renderOrders();
+    </script>
+</body>
+
+</html>

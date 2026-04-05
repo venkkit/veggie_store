@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders — VeggieStore</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .success-banner {
+            background: linear-gradient(135deg, var(--green-700), var(--green-500));
+            color: #fff;
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 16px;
+            animation: popIn .4s cubic-bezier(.34, 1.56, .64, 1);
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: scale(.9)
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1)
+            }
+        }
+
+        .success-banner .success-icon {
+            font-size: 2.5rem;
+        }
+
+        .success-banner h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-top: 6px;
+        }
+
+        .success-banner p {
+            font-size: .82rem;
+            opacity: .9;
+            margin-top: 2px;
+        }
+
+        .order-card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 12px;
+            overflow: hidden;
+            transition: all var(--transition);
+        }
+
+        .order-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .order-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .order-id {
+            font-size: .82rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .order-date {
+            font-size: .72rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .order-card-body {
+            padding: 14px 16px;
+            display: none;
+        }
+
+        .order-card-body.open {
+            display: block;
+        }
+
+        .order-item-line {
+            display: flex;
+            justify-content: space-between;
+            font-size: .82rem;
+            padding: 4px 0;
+            color: var(--text-secondary);
+        }
+
+        .track-mini {
+            display: flex;
+            gap: 0;
+            margin: 12px 0;
+        }
+
+        .track-step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            padding-top: 28px;
+        }
+
+        .track-step::before {
+            content: '';
+            position: absolute;
+            top: 9px;
+            left: 50%;
+            right: -50%;
+            height: 3px;
+            background: var(--border);
+            z-index: 0;
+        }
+
+        .track-step:last-child::before {
+            display: none;
+        }
+
+        .track-step.done::before {
+            background: var(--green-400);
+        }
+
+        .track-dot {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--border);
+            border: 3px solid var(--surface);
+            box-shadow: 0 0 0 2px var(--border);
+            z-index: 1;
+            transition: all var(--transition);
+        }
+
+        .track-step.done .track-dot {
+            background: var(--green-400);
+            box-shadow: 0 0 0 2px var(--green-400);
+        }
+
+        .track-step.active .track-dot {
+            background: var(--primary);
+            box-shadow: 0 0 0 4px rgba(76, 175, 80, .25);
+        }
+
+        .track-label {
+            font-size: .62rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .track-step.active .track-label,
+        .track-step.done .track-label {
+            color: var(--primary);
+        }
+
+        .tab-bar {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 4px;
+            text-align: center;
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all var(--transition);
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <a href="home.html" class="back-btn">←</a>
+        <div style="font-size:1rem;font-weight:700;">My Orders</div>
+        <div style="width:38px;"></div>
+    </nav>
+
+    <div class="page-content" style="padding-bottom:calc(var(--bottom-nav-h)+16px);">
+
+        <!-- Success Banner -->
+        <div id="success-banner" class="success-banner hidden">
+            <div class="success-icon">✅</div>
+            <h3>Order Placed!</h3>
+            <p id="success-order-id"></p>
+            <p style="margin-top:4px;font-size:.75rem;opacity:.85;">We'll deliver your fresh vegetables on time 🥬</p>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="tab-bar">
+            <div class="tab-btn active" onclick="setTab('all',this)">All</div>
+            <div class="tab-btn" onclick="setTab('pending',this)">Pending</div>
+            <div class="tab-btn" onclick="setTab('active',this)">Active</div>
+            <div class="tab-btn" onclick="setTab('delivered',this)">Delivered</div>
+        </div>
+
+        <div id="orders-list"></div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+        <a href="home.html" class="bottom-nav-item"><span class="icon">🏠</span><span>Home</span></a>
+        <a href="cart.html" class="bottom-nav-item"><span class="icon">🛒</span><span>Cart</span></a>
+        <a href="orders.html" class="bottom-nav-item active"><span class="icon">📦</span><span>Orders</span></a>
+        <a href="#" onclick="VS.auth.clearSession();window.location.href='index.html'" class="bottom-nav-item"><span
+                class="icon">👤</span><span>Profile</span></a>
+    </nav>
+
+    <div id="toast-container"></div>
+    <script src="js/store.js"></script>
+    <script>
+        if (!VS.auth.isLoggedIn()) window.location.href = 'index.html';
+
+        const session = VS.auth.getSession();
+        const params = new URLSearchParams(location.search);
+        const successId = params.get('success');
+        let activeTab = 'all';
+
+        const STATUS_STEPS = ['pending', 'packed', 'out_for_delivery', 'delivered'];
+        const STEP_LABELS = ['Pending', 'Packed', 'On Way', 'Delivered'];
+        const STEP_ICONS = ['⏳', '📦', '🚴', '✅'];
+
+        if (successId) {
+            const banner = document.getElementById('success-banner');
+            banner.classList.remove('hidden');
+            document.getElementById('success-order-id').textContent = `Order #${successId} confirmed!`;
+            showToast('Order placed successfully! 🎉', 'success');
+            history.replaceState({}, '', 'orders.html');
+        }
+
+        function setTab(tab, el) {
+            activeTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            renderOrders();
+        }
+
+        function renderOrders() {
+            let orders = VS.orders.getByUser(session.id);
+            if (activeTab === 'pending') orders = orders.filter(o => o.status === 'pending');
+            if (activeTab === 'active') orders = orders.filter(o => ['packed', 'out_for_delivery'].includes(o.status));
+            if (activeTab === 'delivered') orders = orders.filter(o => o.status === 'delivered');
+
+            const list = document.getElementById('orders-list');
+            list.innerHTML = '';
+
+            if (!orders.length) {
+                list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📦</div>
+          <h3>No orders here</h3>
+          <p>Your orders will appear here</p>
+          <a href="home.html" class="btn btn-primary mt-md">Shop Now →</a>
+        </div>`;
+                return;
+            }
+
+            orders.forEach(order => {
+                const stepIdx = STATUS_STEPS.indexOf(order.status);
+                const stepsHtml = STATUS_STEPS.map((s, i) => {
+                    const cls = i < stepIdx ? 'done' : i === stepIdx ? 'active' : '';
+                    return `<div class="track-step ${cls}">
+          <div class="track-dot"></div>
+          <div class="track-label">${STEP_ICONS[i]}<br>${STEP_LABELS[i]}</div>
+        </div>`;
+                }).join('');
+
+                const itemsHtml = order.items.map(i =>
+                    `<div class="order-item-line"><span>${i.emoji} ${i.name} × ${i.qty} ${i.unit}</span><span>₹${i.price * i.qty}</span></div>`
+                ).join('');
+
+                const card = document.createElement('div');
+                card.className = 'order-card';
+                card.innerHTML = `
+        <div class="order-card-header" onclick="toggleOrder(this)">
+          <div>
+            <div class="order-id">#${order.id}</div>
+            <div class="order-date">${VS.fmt.date(order.createdAt)}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="badge ${VS.fmt.statusBadge(order.status)}">${VS.fmt.statusLabel(order.status)}</span>
+            <span style="color:var(--text-muted);font-size:.8rem;">▼</span>
+          </div>
+        </div>
+        <div class="order-card-body">
+          <div class="track-mini">${stepsHtml}</div>
+          <div style="margin-top:12px;">${itemsHtml}</div>
+          <div style="display:flex;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border);margin-top:8px;font-weight:700;font-size:.9rem;">
+            <span>Total</span><span style="color:var(--primary);">₹${order.total}</span>
+          </div>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-top:6px;">
+            📍 ${order.address}<br>
+            ⏰ ${order.slot === 'morning' ? 'Morning (6–10 AM)' : 'Evening (5–8 PM)'} · 
+            💳 ${order.payment === 'cod' ? 'Cash on Delivery' : 'UPI'}
+          </div>
+        </div>`;
+                list.appendChild(card);
+            });
+        }
+
+        function toggleOrder(header) {
+            const body = header.nextElementSibling;
+            body.classList.toggle('open');
+            header.querySelector('span:last-child').textContent = body.classList.contains('open') ? '▲' : '▼';
+        }
+
+        renderOrders();
+    </script>
+</body>
+
+</html>
